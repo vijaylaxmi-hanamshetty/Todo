@@ -52,7 +52,7 @@ export default function SignIn() {
     if (data.session) {
       toast.success(`Signed in as ${values.email}`);
       console.log("Session data:", data.session);
-      // Redirect or further logic here
+      
     } else {
       toast.error("Sign in failed: No session returned.");
     }
