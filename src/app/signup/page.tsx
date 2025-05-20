@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import toast from "react-hot-toast";
-import {supabase} from "@/lib/supabase"
+import { supabase } from "@/lib/supabaseClient";
+import toast, { Toaster } from "react-hot-toast";
 
 interface FormValues {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -14,6 +15,7 @@ interface FormValues {
 
 export default function SignUp() {
   const initialValues: FormValues = {
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -22,18 +24,13 @@ export default function SignUp() {
   const validate = (values: FormValues) => {
     const errors: Partial<FormValues> = {};
 
+    if (!values.name) errors.name = "Name is required.";
     if (!values.email) {
       errors.email = "Email is required.";
-    } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
-    ) {
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
       errors.email = "Invalid email address.";
     }
-
-    if (!values.password) {
-      errors.password = "Password is required.";
-    }
-
+    if (!values.password) errors.password = "Password is required.";
     if (!values.confirmPassword) {
       errors.confirmPassword = "Confirm Password is required.";
     } else if (values.password !== values.confirmPassword) {
@@ -44,22 +41,31 @@ export default function SignUp() {
   };
 
   const handleSubmit = async (values: FormValues) => {
-    const { data, error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            full_name: values.name, // Optional: store custom fields
+          },
+        },
+      });
 
-    if (error) {
-      toast.error(`Signup failed: ${error.message}`);
-    } else {
-      toast.success(
-        `Account created for ${values.email}. Please check your email to confirm.`
-      );
+      if (error) {
+        toast.error(`Error: ${error.message}`);
+      } else {
+        toast.success("Account created! Please check your email to confirm.");
+      }
+    } catch (err) {
+      toast.error("Unexpected error occurred.");
+      console.error(err);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-8">
+      <Toaster position="top-right" />
       <div className="max-w-md w-full bg-white p-10 rounded-xl shadow-lg text-gray-800">
         <h1 className="text-3xl font-bold mb-8 text-indigo-600 text-center">
           Create Account
@@ -71,6 +77,24 @@ export default function SignUp() {
           onSubmit={handleSubmit}
         >
           <Form className="space-y-6">
+            <div>
+              <label htmlFor="name" className="block mb-2 font-semibold">
+                Full Name
+              </label>
+              <Field
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Your Name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <ErrorMessage
+                name="name"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
+
             <div>
               <label htmlFor="email" className="block mb-2 font-semibold">
                 Email address

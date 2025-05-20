@@ -1,10 +1,11 @@
-import Link from 'next/link';
-import Home from './components/Homepage';
+
+import AuthGuard from './components/AuthGuard'
+import Home from './components/Homepage'
 
 export default function HomePage() {
   return (
-    <div>
-      <Home/>
-    </div>
-  );
+    <AuthGuard>
+      <Home />
+    </AuthGuard>
+  )
 }

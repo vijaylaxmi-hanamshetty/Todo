@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthGuard from "../components/AuthGuard";
 
 const aboutLinks = [
   { label: "Open roles", href: "#" },
@@ -43,16 +44,17 @@ const values = [
 
 export default function About() {
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-10 sm:py-16">
-      <div className="w-full max-w-2xl text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-          About <span className="text-indigo-600">NextApp</span>
-        </h1>
-        <p className="text-lg text-gray-600 mb-4">
-          NextApp is a passionate team of developers, designers, and strategists dedicated to building the next generation of web experiences.
-        </p>
-        <p className="text-base text-gray-500 mb-8">
-          Since our founding in 2019, we’ve helped startups and enterprises launch over 150 successful projects. Our mission is to empower people and organizations through technology, design, and collaboration. We value creativity, transparency, and a relentless drive for excellence.
+    <AuthGuard>
+      <section className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-10 sm:py-16">
+        <div className="w-full max-w-2xl text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+            About <span className="text-indigo-600">NextApp</span>
+          </h1>
+          <p className="text-lg text-gray-600 mb-4">
+            NextApp is a passionate team of developers, designers, and strategists dedicated to building the next generation of web experiences.
+          </p>
+          <p className="text-base text-gray-500 mb-8">
+            Since our founding in 2019, we’ve helped startups and enterprises launch over 150 successful projects. Our mission is to empower people and organizations through technology, design, and collaboration. We value creativity, transparency, and a relentless drive for excellence.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mb-10">
           {aboutLinks.map((link) => (
@@ -86,5 +88,6 @@ export default function About() {
         </div>
       </div>
     </section>
+    </AuthGuard>
   );
 }

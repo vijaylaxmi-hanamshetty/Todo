@@ -1,18 +1,21 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClient";
 import { Check, Pencil, Trash2, X } from "lucide-react";
+import AuthGuard from "../components/AuthGuard";
 
 type Todo = {
-  id: number;
+  id: string;
   task: string;
   status: string;
+  user_id: string;
 };
 
 const Page = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTask, setNewTask] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState("");
   const [toast, setToast] = useState<{
     message: string;
@@ -31,11 +34,23 @@ const Page = () => {
   }, [toast]);
 
   async function fetchTodos() {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      showToast("User not authenticated", "error");
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("todos")
         .select("*")
-        .order("id");
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       if (data) setTodos(data);
     } catch (error: any) {
@@ -52,10 +67,25 @@ const Page = () => {
       showToast("Please enter a task description", "error");
       return;
     }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      showToast("User not authenticated", "error");
+      return;
+    }
+
     try {
-      const { error } = await supabase
-        .from("todos")
-        .insert([{ task: newTask, status: "Not Started" }]);
+      const { error } = await supabase.from("todos").insert([
+        {
+          task: newTask,
+          status: "Not Started",
+          user_id: user.id,
+        },
+      ]);
       if (error) throw error;
       setNewTask("");
       fetchTodos();
@@ -65,7 +95,7 @@ const Page = () => {
     }
   }
 
-  async function toggleStatus(id: number, currentStatus: string) {
+  async function toggleStatus(id: string, currentStatus: string) {
     const nextStatus = currentStatus === "Done" ? "Not Started" : "Done";
     try {
       const { error } = await supabase
@@ -80,7 +110,7 @@ const Page = () => {
     }
   }
 
-  function startEditing(id: number, task: string) {
+  function startEditing(id: string, task: string) {
     setEditingId(id);
     setEditingTask(task);
   }
@@ -90,7 +120,7 @@ const Page = () => {
     setEditingTask("");
   }
 
-  async function saveEdit(id: number) {
+  async function saveEdit(id: string) {
     if (!editingTask.trim()) {
       showToast("Task description cannot be empty", "error");
       return;
@@ -109,7 +139,7 @@ const Page = () => {
     }
   }
 
-  async function deleteTodo(id: number) {
+  async function deleteTodo(id: string) {
     try {
       const { error } = await supabase.from("todos").delete().eq("id", id);
       if (error) throw error;
@@ -121,16 +151,17 @@ const Page = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      {toast && (
-        <div
-          className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white font-semibold transition-opacity ${
-            toast.type === "success" ? "bg-green-600" : "bg-red-600"
-          }`}
-          role="alert"
-          aria-live="assertive"
-        >
-          {toast.message}
+    <AuthGuard>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+        {toast && (
+          <div
+            className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white font-semibold transition-opacity ${
+              toast.type === "success" ? "bg-green-600" : "bg-red-600"
+            }`}
+            role="alert"
+            aria-live="assertive"
+          >
+            {toast.message}
         </div>
       )}
 
@@ -140,7 +171,6 @@ const Page = () => {
             Todo Tasks
           </h1>
 
-          
           <div className="flex gap-3 mb-6">
             <input
               type="text"
@@ -165,7 +195,7 @@ const Page = () => {
             </div>
           ) : (
             <ol className="space-y-3 list-decimal pl-6">
-              {todos.map((todo, index) => (
+              {todos.map((todo) => (
                 <li key={todo.id} className="pb-3 relative pl-2">
                   <div className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-all">
                     <button
@@ -181,24 +211,10 @@ const Page = () => {
                       }`}
                     >
                       {todo.status === "Done" && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-3.5 h-3.5"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <Check size={16} strokeWidth={3} />
                       )}
                     </button>
 
-                    {/* Editing Mode */}
                     {editingId === todo.id ? (
                       <div className="flex-1 flex items-center gap-2">
                         <input
@@ -211,7 +227,6 @@ const Page = () => {
                             e.key === "Enter" && saveEdit(todo.id)
                           }
                         />
-                        {/* Save Button */}
                         <button
                           onClick={() => saveEdit(todo.id)}
                           className="h-9 px-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center justify-center"
@@ -220,7 +235,6 @@ const Page = () => {
                         >
                           <Check size={16} />
                         </button>
-
                         <button
                           onClick={cancelEditing}
                           className="h-9 px-3 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition flex items-center justify-center"
@@ -244,7 +258,6 @@ const Page = () => {
                           {todo.task}
                         </span>
                         <div className="flex items-center gap-2">
-                          {/* Edit Button */}
                           <button
                             onClick={() => startEditing(todo.id, todo.task)}
                             className="h-8 w-8 p-0 border border-blue-600 text-blue-600 hover:bg-blue-100 rounded-md transition flex items-center justify-center"
@@ -253,7 +266,6 @@ const Page = () => {
                           >
                             <Pencil size={16} />
                           </button>
-                          {/* Delete Button */}
                           <button
                             onClick={() => deleteTodo(todo.id)}
                             className="h-8 w-8 p-0 border border-red-600 text-red-600 hover:bg-red-100 rounded-md transition flex items-center justify-center"
@@ -280,6 +292,7 @@ const Page = () => {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 };
 

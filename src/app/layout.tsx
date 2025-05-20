@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {children}
         <Footer />
-        {/* Toast notifications */}
+       
         <Toaster />
       </body>
     </html>

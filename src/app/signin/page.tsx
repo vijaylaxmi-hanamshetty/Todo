@@ -3,15 +3,18 @@
 import React from "react";
 import Link from "next/link";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import toast from "react-hot-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClient";
+import toast, { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface FormValues {
   email: string;
   password: string;
 }
 
-export default function SignIn() {
+export default function SimpleSignInForm() {
+  const router = useRouter();
+
   const initialValues: FormValues = {
     email: "",
     password: "",
@@ -36,104 +39,86 @@ export default function SignIn() {
   };
 
   const handleSubmit = async (values: FormValues) => {
-  console.log("Signing in with:", values.email, values.password);
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
 
-    if (error) {
-      console.error("Sign in error:", error);
-      toast.error(`Sign in failed: ${error.message}`);
-      return;
-    }
+      if (error) {
+        toast.error("Invalid email or password.");
+        return;
+      }
 
-    if (data.session) {
-      toast.success(`Signed in as ${values.email}`);
-      console.log("Session data:", data.session);
-      
-    } else {
-      toast.error("Sign in failed: No session returned.");
+      toast.success("Signed in successfully!");
+     
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong during sign-in.");
     }
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    toast.error(
-      `Sign in error: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="max-w-md w-full bg-white p-10 rounded-xl shadow-lg text-gray-800">
-        <h1 className="text-3xl font-bold mb-8 text-indigo-600 text-center">
-          Welcome Back
-        </h1>
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
+      <Toaster position="top-right" />
+      <h2 className="text-2xl font-bold mb-4 text-center">Sign In</h2>
 
-        <Formik
-          initialValues={initialValues}
-          validate={validate}
-          onSubmit={handleSubmit}
-        >
-          <Form className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block mb-2 font-semibold">
-                Email address
-              </label>
-              <Field
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-              <ErrorMessage
-                name="email"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
+      <Formik
+        initialValues={initialValues}
+        validate={validate}
+        onSubmit={handleSubmit}
+      >
+        <Form className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block font-medium">
+              Email
+            </label>
+            <Field
+              name="email"
+              type="email"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+            <ErrorMessage
+              name="email"
+              component="div"
+              className="text-red-500 text-sm mt-1"
+            />
+          </div>
 
-            <div>
-              <label htmlFor="password" className="block mb-2 font-semibold">
-                Password
-              </label>
-              <Field
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-              <ErrorMessage
-                name="password"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
-            </div>
+          <div>
+            <label htmlFor="password" className="block font-medium">
+              Password
+            </label>
+            <Field
+              name="password"
+              type="password"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+            <ErrorMessage
+              name="password"
+              component="div"
+              className="text-red-500 text-sm mt-1"
+            />
+          </div>
 
-            <button
-              type="submit"
-              className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-md py-3 transition"
-            >
-              Sign In
-            </button>
-          </Form>
-        </Formik>
-
-        <p className="mt-8 text-center text-gray-600">
-          New here?{" "}
-          <Link
-            href="/signup"
-            className="text-indigo-600 font-semibold hover:underline"
+          <button
+            type="submit"
+            className="w-full bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600 transition"
           >
-            Create an account
-          </Link>
-        </p>
-      </div>
+            Sign In
+          </button>
+        </Form>
+      </Formik>
+
+      <p className="mt-6 text-center text-sm text-gray-600">
+        Don’t have an account?{" "}
+        <Link
+          href="/signup"
+          className="text-indigo-600 font-medium hover:underline"
+        >
+          Sign Up
+        </Link>
+      </p>
     </div>
   );
 }
