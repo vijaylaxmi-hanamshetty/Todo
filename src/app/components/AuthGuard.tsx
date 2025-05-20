@@ -17,7 +17,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
-        router.push('/signin') // redirect if not signed in
+        router.push('/signin') 
       } else {
         setLoading(false)
       }
